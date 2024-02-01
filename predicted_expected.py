@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-file_path = '/Users/zimenglyu/Documents/code/git/exact/results_djia_25_9/DJI_stock_data_test_predictions.csv'
+file_path = ''
 
 data = pd.read_csv(file_path)
 
