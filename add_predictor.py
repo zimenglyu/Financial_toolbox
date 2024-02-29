@@ -49,14 +49,22 @@ def replace_char_with_zero(df, column_name):
     # Convert the column to string, replace 'c' with '0', and convert back to float
     df[column_name] = df[column_name].astype(str).str.replace('C', '0').astype(float)
     return df
+def make_dir(path):
+    try:
+        os.mkdir(path)
+    except FileExistsError:
+        print(f"Directory '{path}' already exists.")
+    
 
 if __name__ == '__main__':
     root_folder = "/Users/zimenglyu/Documents/datasets/CRSP/DJI_history"
-    # file_path = "/Users/zimenglyu/Documents/datasets/CRSP/HWP.csv"
-    # save_name = "/Users/zimenglyu/Documents/datasets/CRSP/HWP_new.csv"
+    new_root = root_folder + "_new"
+    make_dir(new_root)
     folders = get_folders_in_path(root_folder)
     for folder in folders:
         sub_folder = os.path.join(root_folder, folder)
+        target_folder = os.path.join(new_root, folder)
+        make_dir(target_folder)
         files = glob(os.path.join(sub_folder, "*.csv"))
         for file in files:
             file_name = file.split('/')[-1].split('.csv')[0]
@@ -65,4 +73,5 @@ if __name__ == '__main__':
             df = add_volumn_change(df)
             df = add_BA_Spread(df)
             df = add_Illiquidity(df)
-            df.to_csv(os.path.join(sub_folder, file_name + "_new.csv"))
+
+            df.to_csv(os.path.join(target_folder , file_name + ".csv"))
