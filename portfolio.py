@@ -14,11 +14,13 @@ class Portfolio:
         portfolio_names (list): List of stock names in the portfolio.
     """
 
-    def __init__(self):
+    def __init__(self, stock_names, spend_per_stock=200):
         """
         Initializes a Portfolio object with default attributes.
         """
-        self.money_spend = 0
+        self.spend_per_stock = spend_per_stock
+        self.stock_names = stock_names
+        self.money_spend = self.spend_per_stock * len(self.stock_names)
         self.money_earn = 0
         self.portfolio_names = []
 
@@ -26,7 +28,7 @@ class Portfolio:
         """
         Resets the portfolio by clearing spending, earning, and the list of stock names.
         """
-        self.money_spend = 0
+        self.money_spend = self.spend_per_stock * len(self.stock_names)
         self.money_earn = 0
         self.portfolio_names = []
 
@@ -108,31 +110,35 @@ class Portfolio:
             stock_name (str): Name of the stock.
             share (int): Number of shares (default is 1).
         """
-        if len(predicted_return) + 1 != len(price):
-            print('Length of predicted_return is not equal to price')
+        if(len(predicted_return) + 1 != len(price)):
+            print('length of predicted_return is not equal to price')
             exit()
-        stock_spend = 0
-        stock_earn = 0
-        for i in range(len(predicted_return) - 1):
+        money_pool = 200
+        share = 0
+        for i in range(len(predicted_return)-1):
             if predicted_return[i] > 0:
                 if not self.is_in_portfolio(stock_name):
                     self.add_stock(stock_name)
-                    self.add_spend(price[i] * share)
-                    stock_spend += price[i] * share
+                    share = money_pool / price[i]
+                    # print(f"Stock {stock_name}, bought price: {price[i]}, share: {share}")
+                    money_pool = 0
                     bought_price = price[i]
             else:
                 if self.is_in_portfolio(stock_name):
-                    if (price[i] - bought_price) / bought_price * 100 > 7:
-                        print(f"Stock {stock_name}, bought price: {bought_price}, sold price: {price[i]}")
-                        self.add_earn(price[i] * share)
+                    if bought_price < price[i]:
+                        money_pool = price[i] * share
+                        print(f"Stock {stock_name}, bought price: {bought_price}, sold price: {price[i]}, number of shares: {share} money_pool: {money_pool}")
                         self.remove_stock(stock_name)
-                        stock_earn += price[i] * share
         if self.is_in_portfolio(stock_name):
-            self.add_earn(price[-2] * share)
             self.remove_stock(stock_name)
-            stock_earn += price[-2] * share
-        stock_return = ((stock_earn - stock_spend) / stock_spend) * 100
-        print(f"Stock return for {stock_name} is {stock_return}")
+            money_pool = price[-2] * share
+        if (money_pool == 0):
+            print(f"Stock {stock_name} is in the profolio, but not sold")
+            exit()
+        self.add_earn(money_pool)
+        print(f"Stock {stock_name}, earned: {money_pool}")
+
+
 
     def long_short_return(self, predicted_return, price, stock_name):
         """
