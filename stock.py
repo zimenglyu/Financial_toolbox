@@ -15,7 +15,7 @@ Example:
     my_stock.load_predictions('predicted_returns.csv')
 
     # Read stock prices from a file
-    my_stock.read_stock_price('stock_prices.csv')
+    my_stock.load_real_prices('stock_prices.csv')
 
     # Buy stock
     my_stock.buy_stock(1000, 0)
@@ -64,7 +64,7 @@ class Stock:
         self.return_prediction = pd.read_csv(file_path, usecols=['predicted_RET']).to_numpy().flatten()
         self.testing_period = len(self.return_prediction)
 
-    def read_stock_price(self, file_path):
+    def load_real_prices(self, file_path):
         """
         Reads the stock prices from a CSV file and stores them in the stock_price attribute.
         """

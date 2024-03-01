@@ -20,9 +20,9 @@ if __name__ == '__main__':
         prediction_file = os.path.join(PREDICTION_DIR, stock_name + "_predictions.csv")
         test_file = os.path.join(TEST_DIR, stock_name + ".csv")
         company.load_predictions(prediction_file)
-        company.read_stock_price(test_file)
+        company.load_real_prices(test_file)
         # print("stock {}  got data".format(stock_name))
-        portfolio.add_company_to_protfolio(company)
+        portfolio.add_company_to_portfolio(company)
         
     
     portfolio.trade(return_strategy)
