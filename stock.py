@@ -12,7 +12,7 @@ Example:
     my_stock = stock.Stock('AAPL')
 
     # Read predicted returns from a file
-    my_stock.read_return_prediction('predicted_returns.csv')
+    my_stock.load_predictions('predicted_returns.csv')
 
     # Read stock prices from a file
     my_stock.read_stock_price('stock_prices.csv')
@@ -57,7 +57,7 @@ class Stock:
         self.share = 0.0
         self.bought_price = 0.0
 
-    def read_return_prediction(self, file_path):
+    def load_predictions(self, file_path):
         """
         Reads the predicted returns from a CSV file and stores them in the return_prediction attribute.
         """

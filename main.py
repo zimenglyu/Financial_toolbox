@@ -19,7 +19,7 @@ if __name__ == '__main__':
         # print("loaded stock: ", stock_name)
         prediction_file = os.path.join(PREDICTION_DIR, stock_name + "_predictions.csv")
         test_file = os.path.join(TEST_DIR, stock_name + ".csv")
-        company.read_return_prediction(prediction_file)
+        company.load_predictions(prediction_file)
         company.read_stock_price(test_file)
         # print("stock {}  got data".format(stock_name))
         portfolio.add_company_to_protfolio(company)
