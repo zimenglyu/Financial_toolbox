@@ -4,6 +4,8 @@ for tracking spending and earnings, managing stocks in the portfolio,
 and calculating returns on investment using various investment strategies.
 
 """
+from stock import Stock
+from typing import List
 class Portfolio:
     """
     A class to manage financial portfolios including spending, earning, and stock investments.
@@ -14,19 +16,35 @@ class Portfolio:
         portfolio_names (list): List of stock names in the portfolio.
     """
 
-    def __init__(self, stocks):
+    def __init__(self, stocks : List[Stock], portfolio_list=None, initial_capital=0.0, initial_spend_per_stock=0.0, money_spend=0.0, money_earn=0.0, portfolio_return=0.0):
         """
         Initializes a Portfolio object with default attributes.
         """
-        self.initial_spend_per_stock = 0
-        self.initial_capital = 0
+        self.initial_spend_per_stock = initial_spend_per_stock
+        self.initial_capital = initial_capital
         self.stocks = stocks
-        self.money_spend = 0
-        self.money_earn = 0
-        self.portfolio_list = []
-        self.portfolio_return = 0
+        self.money_spend = money_spend
+        self.money_earn = money_earn
+        self.portfolio_list = portfolio_list
+        self.portfolio_return = portfolio_return
         print("Portfolio created")
+        
+    def stats(self):
+        number_of_stocks = len(self.stocks)
+        if number_of_stocks > 1 :
+            substring_1 = f"This portfolio has {len(self.stocks)} stocks."
+        elif number_of_stocks == 0:
+            substring_1 = f"This portfolio has NO stocks."
+        else: 
+            substring_1 = f"This portfolio has just 1 stock."
+        return f"Stats:\n\t{substring_1} Its initial capital was ${self.initial_capital}.\n\tThe portfolio has spent ${self.money_spend} & earned ${self.money_earn}.\n\tStocks currently held:\n\t\t\t{self.__get_stock_strings()}"
 
+    def __get_stock_strings(self):
+        stocks_strings = []
+        for stock in self.stocks:
+            stocks_strings.append(stock.get_stock_name())
+        return stocks_strings
+        
     def reset(self):
         """
         Resets the portfolio by clearing spending, earning, and the list of stock names.
