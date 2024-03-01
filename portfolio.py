@@ -20,7 +20,7 @@ class Portfolio:
         Initializes a Portfolio object with default attributes.
         """
         self.initial_spend_per_stock = 0
-        self.initial_money_pool = 0
+        self.initial_capital = 0
         self.stock_names = stock_names
         self.money_spend = 0
         self.money_earn = 0
@@ -39,7 +39,7 @@ class Portfolio:
         if (self.strategy == 'simple_return'):
             self.money_spend = self.initial_spend_per_stock * len(self.stock_names)
         elif (self.strategy == 'portfolio_simple_return'):
-            self.money_spend = self.initial_money_pool
+            self.money_spend = self.initial_capital
         elif (self.strategy == 'long_short_return'):
             print("do something here")
             exit()
@@ -47,12 +47,12 @@ class Portfolio:
             print("Invalid strategy, can't reset portfolio")
             exit()
     
-    def add_company_to_protfolio(self, company):
+    def add_company_to_portfolio(self, company):
         self.portfolio_list.append(company)
         print (f"added company {company.get_stock_name()} to portfolio list" )
 
-    def set_initial_money_pool(self, money_pool):
-        self.initial_money_pool = money_pool
+    def set_initial_capital(self, capital):
+        self.initial_capital = capital
     
     def set_initial_spend_per_stock(self, spend_per_stock):
         self.initial_spend_per_stock = spend_per_stock
@@ -152,7 +152,7 @@ class Portfolio:
 
         """
         testing_period = self.portfolio_list[0].testing_period
-        self.current_money_pool = self.initial_money_pool
+        self.current_capital = self.initial_capital
 
 
         for time in range(testing_period - 1):
@@ -160,7 +160,7 @@ class Portfolio:
             for company in self.portfolio_list:
                 if company.get_predicted_return(time) < 0:
                     if company.get_bought_price() < company.get_stock_price(time):
-                        self.current_money_pool += company.sell_stock(time)
+                        self.current_capital += company.sell_stock(time)
             companies_to_buy = []
             # find all stocks to buy at time t
             for company in self.portfolio_list:
@@ -171,20 +171,20 @@ class Portfolio:
                 continue
             else:
                 # just give each stock equal amount of money
-                quota_per_stock = self.current_money_pool / len(companies_to_buy)
+                quota_per_stock = self.current_capital / len(companies_to_buy)
                 for company in companies_to_buy:
-                    if self.current_money_pool >= quota_per_stock:
+                    if self.current_capital >= quota_per_stock:
                         company.buy_stock(quota_per_stock, time)
-                        self.current_money_pool -= quota_per_stock
-                    elif abs(self.current_money_pool - quota_per_stock) < 1:
-                        company.buy_stock(self.current_money_pool, time)
-                        self.current_money_pool = 0
+                        self.current_capital -= quota_per_stock
+                    elif abs(self.current_capital - quota_per_stock) < 1:
+                        company.buy_stock(self.current_capital, time)
+                        self.current_capital = 0
                     else:
                         print(f"Can't buy stock {company.get_stock_name()} at time {time} because of insufficient money")
-                        print("current money pool: ", self.current_money_pool)
+                        print("current money pool: ", self.current_capital)
                         print("quota per stock: ", quota_per_stock)
-                if self.current_money_pool > 1:
-                    print(f"current money pool {self.current_money_pool} at time {time}")
+                if self.current_capital > 1:
+                    print(f"current money pool {self.current_capital} at time {time}")
         # sell all stocks at the end
         for company in self.portfolio_list:
             self.money_earn += company.sell_stock(-2)
