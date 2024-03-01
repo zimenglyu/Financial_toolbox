@@ -11,7 +11,10 @@ class Stock:
         self.return_prediction = []
         self.return_price = []
         
-    
+    def reset(self):
+        self.share = 0
+        self.bought_price = 0
+
     def read_return_prediction(self, file_path):
         self.return_prediction = pd.read_csv(file_path, usecols=['predicted_RET']).to_numpy().flatten()
         self.testing_period = len(self.return_prediction)
@@ -53,6 +56,7 @@ class Stock:
                         self.share = 0
         if self.share != 0:
             money_pool = self.stock_price[-2] * self.share
+            self.share = 0
         return money_pool
 
     def get_predicted_return(self, time):

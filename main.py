@@ -8,9 +8,12 @@ if __name__ == '__main__':
     TEST_DIR = "data/test"
     stock_names = ['AAPL', 'AXP', 'BA', 'CAT', 'CSCO', 'CVX', 'DOW', 'DIS', 'WBA', 'GS', 'HD', 'IBM', 'INTC', 'JNJ', 'JPM', 'KO', 'MCD', 'MMM', 'MRK', 'MSFT', 'NKE',  'PG', 'TRV', 'UNH',  'VZ', 'V', 'WMT', 'HON', 'AMGN', 'CRM']
     spend_per_stock = 200
-    portfolio = Portfolio(stock_names, spend_per_stock=spend_per_stock, money_pool=6000)
-    # return_strategy = 'simple_return'
-    return_strategy = 'portfolio_simple_return'
+    money_pool = 6000
+    portfolio = Portfolio(stock_names)
+    portfolio.set_initial_spend_per_stock(spend_per_stock)
+    portfolio.set_initial_money_pool(money_pool)
+    return_strategy = 'simple_return'
+    # return_strategy = 'portfolio_simple_return'
 
     for stock_name in stock_names:
         company = Stock(stock_name)
