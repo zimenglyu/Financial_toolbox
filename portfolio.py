@@ -4,7 +4,6 @@ for tracking spending and earnings, managing stocks in the portfolio,
 and calculating returns on investment using various investment strategies.
 
 """
-from stock import Stock
 class Portfolio:
     """
     A class to manage financial portfolios including spending, earning, and stock investments.
@@ -15,13 +14,13 @@ class Portfolio:
         portfolio_names (list): List of stock names in the portfolio.
     """
 
-    def __init__(self, stock_names):
+    def __init__(self, stocks):
         """
         Initializes a Portfolio object with default attributes.
         """
         self.initial_spend_per_stock = 0
         self.initial_capital = 0
-        self.stock_names = stock_names
+        self.stocks = stocks
         self.money_spend = 0
         self.money_earn = 0
         self.portfolio_list = []
@@ -33,11 +32,11 @@ class Portfolio:
         Resets the portfolio by clearing spending, earning, and the list of stock names.
         """
         self.money_earn = 0
-        for company in self.portfolio_list:
-            company.reset()
+        for stock in self.portfolio_list:
+            stock.reset()
         
         if (self.strategy == 'simple_return'):
-            self.money_spend = self.initial_spend_per_stock * len(self.stock_names)
+            self.money_spend = self.initial_spend_per_stock * len(self.stocks)
         elif (self.strategy == 'portfolio_simple_return'):
             self.money_spend = self.initial_capital
         elif (self.strategy == 'long_short_return'):
@@ -47,9 +46,9 @@ class Portfolio:
             print("Invalid strategy, can't reset portfolio")
             exit()
     
-    def add_company_to_portfolio(self, company):
-        self.portfolio_list.append(company)
-        print (f"added company {company.get_stock_name()} to portfolio list" )
+    def add_stock_to_portfolio(self, stock):
+        self.portfolio_list.append(stock)
+        print (f"added stock {stock.get_stock_name()} to portfolio list" )
 
     def set_initial_capital(self, capital):
         self.initial_capital = capital
@@ -73,8 +72,8 @@ class Portfolio:
     
     def simple_return(self):
         print("Calculating simple return")
-        for company in self.portfolio_list:
-            self.money_earn += company.simple_return(self.initial_spend_per_stock)
+        for stock in self.portfolio_list:
+            self.money_earn += stock.simple_return(self.initial_spend_per_stock)
         return self.calculate_return()
 
     def add_spend(self, money):
@@ -157,37 +156,37 @@ class Portfolio:
 
         for time in range(testing_period - 1):
             # sell stocks with negative predicted returns
-            for company in self.portfolio_list:
-                if company.get_predicted_return(time) < 0:
-                    if company.get_bought_price() < company.get_stock_price(time):
-                        self.current_capital += company.sell_stock(time)
+            for stock in self.portfolio_list:
+                if stock.get_predicted_return(time) < 0:
+                    if stock.get_bought_price() < stock.get_stock_price(time):
+                        self.current_capital += stock.sell_stock(time)
             companies_to_buy = []
             # find all stocks to buy at time t
-            for company in self.portfolio_list:
-                if company.get_predicted_return(time) > 0:
-                    companies_to_buy.append(company)
+            for stock in self.portfolio_list:
+                if stock.get_predicted_return(time) > 0:
+                    companies_to_buy.append(stock)
             if len(companies_to_buy) == 0:
                 print(f"No stock to buy at time {time}")
                 continue
             else:
                 # just give each stock equal amount of money
                 quota_per_stock = self.current_capital / len(companies_to_buy)
-                for company in companies_to_buy:
+                for stock in companies_to_buy:
                     if self.current_capital >= quota_per_stock:
-                        company.buy_stock(quota_per_stock, time)
+                        stock.buy_stock(quota_per_stock, time)
                         self.current_capital -= quota_per_stock
                     elif abs(self.current_capital - quota_per_stock) < 1:
-                        company.buy_stock(self.current_capital, time)
+                        stock.buy_stock(self.current_capital, time)
                         self.current_capital = 0
                     else:
-                        print(f"Can't buy stock {company.get_stock_name()} at time {time} because of insufficient money")
+                        print(f"Can't buy stock {stock.get_stock_name()} at time {time} because of insufficient money")
                         print("current money pool: ", self.current_capital)
                         print("quota per stock: ", quota_per_stock)
                 if self.current_capital > 1:
                     print(f"current money pool {self.current_capital} at time {time}")
         # sell all stocks at the end
-        for company in self.portfolio_list:
-            self.money_earn += company.sell_stock(-2)
+        for stock in self.portfolio_list:
+            self.money_earn += stock.sell_stock(-2)
         return self.calculate_return()
 
     def long_short_return(self, predicted_return, price, stock_name):
