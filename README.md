@@ -5,6 +5,7 @@ This repository contains a simple portfolio management system written in Python.
 ## Files
 
 - `portfolio.py`: Contains the `Portfolio` class responsible for managing financial portfolios.
+- `stock.py`: Contains the `Stock` class responsible for managing stocks in portfolios.
 - `main.py`: Main script to execute portfolio calculations.
 - `README.md`: This documentation file.
 
@@ -14,21 +15,17 @@ This repository contains a simple portfolio management system written in Python.
 2. Clone this repository to your local machine.
 3. Install the required dependencies by running `pip install pandas`.
 4. Modify `main.py` to provide appropriate file paths for prediction data and test data.
-5. Run `main.py` to execute the portfolio calculations.
+5. Define return_strategy in `main.py`.
+6. Run `main.py` to execute the portfolio calculations.
 
 ## Portfolio Class
 
-The `Portfolio` class provides the following methods:
+The `Portfolio` class contains the following trading strategies:
 
-- `reset()`: Resets the portfolio.
-- `add_spend(money)`: Adds spending amount.
-- `add_earn(money)`: Adds earning amount.
-- `get_return(return_type)`: Calculates and prints the return on investment.
-- `is_in_Portfolio(stock_name)`: Checks if a stock is in the portfolio.
-- `add_stock(stock_name)`: Adds a stock to the portfolio.
-- `remove_stock(stock_name)`: Removes a stock from the portfolio.
-- `simple_return(predicted_return, price, stock_name, share=1)`: Calculates return on investment based on predicted returns.
-- `long_short_return(predicted_return, price, stock_name)`: Calculates return on investment using a long-short strategy.
+- `simple_return`: Trade each stock individually based on the predicted return. Each stock has the same initial capital for investment. If predicted return > 0, buy or hold; if predicted return <= 0, sell.
+- `portfolio_simple_return`: At time t, sell all stocks with negative predicted return, and use the gained capital to invest all the stocks with positive capital.
+- `long_short_return`: Short the stocks with predicted negative return, STILL UNDER DEVELOPMENT.
+
 
 ## Contributors
 
