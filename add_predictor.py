@@ -17,7 +17,7 @@ def get_folders_in_path(path):
 
 
 def add_volumn_change(df):
-    df['VOL_CHANGE'] = df['VOL'].pct_change()
+    df['VOL_CHANGE'] = df['VOL'].diff()
     return df
 
 # def add_return(df):
@@ -30,6 +30,7 @@ def add_BA_Spread(df):
 def add_Illiquidity(df):
     df['ILLIQUIDITY'] = df['RET'] /(df['VOL'] * df['PRC'])
     return df
+
 # def add_TurnOver(df):
 #     df['TURNOVER'] = df['VOL'] / df['SHROUT']
 #     return df
@@ -58,7 +59,7 @@ def make_dir(path):
 
 if __name__ == '__main__':
     root_folder = "/Users/zimenglyu/Documents/datasets/CRSP/DJI_history"
-    new_root = root_folder + "_new"
+    new_root = root_folder + "_train_vali_test"
     make_dir(new_root)
     folders = get_folders_in_path(root_folder)
     for folder in folders:

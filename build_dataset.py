@@ -44,7 +44,7 @@ def rename_columns(df, columns, file_count):
     return df
 
 if __name__ == '__main__':
-    root_folder = "/Users/zimenglyu/Documents/datasets/CRSP/DJI_history_new"
+    root_folder = "/Users/zimenglyu/Documents/datasets/CRSP/DJI_history_train_vali_test"
     stock_name_path = "/Users/zimenglyu/Documents/datasets/CRSP/DJI_history_new/stock_name.csv"
     DJI_path = '/Users/zimenglyu/Documents/datasets/stock/DJI_stock_data.csv'
     folders =['91-97', '97-99', '99-04', '04-08', '08-08', '08-09', '09-12', '12-13', '13-15', '15-18', '18-19','19-20', '20-20', '20-22']
