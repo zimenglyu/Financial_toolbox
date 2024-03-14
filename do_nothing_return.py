@@ -4,7 +4,7 @@ import os
 
 if __name__ == '__main__':
     # prediction_folder = "/Users/zimenglyu/Documents/cluster_results/0216/predictions"
-    test_file_path = "data/test"
+    test_file_path = "data/2023_test"
 
     stock_names = ['AAPL', 'AXP', 'BA', 'CAT', 'CSCO', 'CVX', 'DOW', 'DIS', 'WBA', 'GS', 'HD', 'IBM', 'INTC', 'JNJ', 'JPM', 'KO', 'MCD', 'MMM', 'MRK', 'MSFT', 'NKE',  'PG', 'TRV', 'UNH',  'VZ', 'V', 'WMT', 'HON', 'AMGN', 'CRM']
     money_spend = 0
