@@ -26,6 +26,7 @@ class Portfolio:
         self.money_earn = 0
         self.portfolio_list = []
         self.portfolio_return = 0
+        self.risk_tolenrance = 0.2
         print("Portfolio created")
 
     def reset(self):
@@ -41,8 +42,7 @@ class Portfolio:
         elif (self.strategy == 'portfolio_simple_return'):
             self.money_spend = self.initial_money_pool
         elif (self.strategy == 'long_short_return'):
-            print("do something here")
-            exit()
+            self.money_spend = self.initial_spend_per_stock * len(self.stock_names)
         else:
             print("Invalid strategy, can't reset portfolio")
             exit()
@@ -56,6 +56,9 @@ class Portfolio:
     
     def set_initial_spend_per_stock(self, spend_per_stock):
         self.initial_spend_per_stock = spend_per_stock
+    
+    def set_risk_tolenrance(self, risk_tolenrance):
+        self.risk_tolenrance = risk_tolenrance
 
     def trade(self, strategy):
         self.strategy = strategy
@@ -190,35 +193,12 @@ class Portfolio:
             self.money_earn += company.sell_stock(-2)
         return self.calculate_return()
 
-    def long_short_return(self, predicted_return, price, stock_name):
+    def long_short_return(self):
         """
         Calculates the return on investment for a stock using a long-short strategy.
-
-        Args:
-            predicted_return (list): Predicted returns for the stock.
-            price (list): Prices of the stock over time.
-            stock_name (str): Name of the stock.
+        simple strategies only "long" the stocks, but long-short strategy can "short" the stocks
         """
-        if len(predicted_return) + 1 != len(price):
-            print('Length of predicted_return is not equal to price')
-            exit()
-
-        self.add_stock(stock_name)
-        self.add_spend(price[0])
-
-        for i in range(1, len(predicted_return) - 1):
-            if predicted_return[i] > 0:
-                if not self.is_in_portfolio(stock_name):
-                    print("This should never happen for long short strategy, stock: ", stock_name)
-                    self.add_stock(stock_name)
-                    self.add_spend(price[i])
-            else:
-                if self.is_in_portfolio(stock_name):
-                    self.add_earn(price[i])
-                    self.remove_stock(stock_name)
-                    self.add_spend(price[i + 1])
-                    self.add_stock(stock_name)
-
-        if self.is_in_portfolio(stock_name):
-            self.add_earn(price[-2])
-            self.remove_stock(stock_name)
+        for company in self.portfolio_list:
+            self.money_earn += company.long_short_return(self.initial_spend_per_stock, self.risk_tolenrance)
+        return self.calculate_return()
+    

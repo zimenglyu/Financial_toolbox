@@ -4,16 +4,18 @@ from portfolio import Portfolio
 from stock import Stock
 
 if __name__ == '__main__':
-    PREDICTION_DIR = "data/predictions"
-    TEST_DIR = "data/test"
+    PREDICTION_DIR = "data/2023_test_prediction"
+    TEST_DIR = "data/2023_test"
     stock_names = ['AAPL', 'AXP', 'BA', 'CAT', 'CSCO', 'CVX', 'DOW', 'DIS', 'WBA', 'GS', 'HD', 'IBM', 'INTC', 'JNJ', 'JPM', 'KO', 'MCD', 'MMM', 'MRK', 'MSFT', 'NKE',  'PG', 'TRV', 'UNH',  'VZ', 'V', 'WMT', 'HON', 'AMGN', 'CRM']
-    spend_per_stock = 200
+    # stock_names = ['AAPL']
+    spend_per_stock = 100
     money_pool = 6000
     portfolio = Portfolio(stock_names)
     portfolio.set_initial_spend_per_stock(spend_per_stock)
     portfolio.set_initial_money_pool(money_pool)
     return_strategy = 'simple_return'
     # return_strategy = 'portfolio_simple_return'
+    # return_strategy = 'long_short_return'
 
     for stock_name in stock_names:
         company = Stock(stock_name)
