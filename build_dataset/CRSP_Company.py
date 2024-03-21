@@ -9,7 +9,7 @@ class CRSP_Company:
     def add_volumn_change(self):
         # df['VOL_CHANGE'] = df['VOL'].diff()
         # return df
-        self.data['VOL_CHANGE'] = self.data['VOL'].pct_change()
+        self.data['VOL_CHANGE'] = self.data['VOL'].pct_change(fill_method=None)
 
     def add_BA_Spread(self):
         self.data['BA_SPREAD'] = (self.data['ASK'] - self.data['BID'])/self.data['PRC']
@@ -49,6 +49,12 @@ class CRSP_Company:
         self.train.to_csv(os.path.join(root_path, "train/{}.csv".format(self.name)), index=False)
         self.validation.to_csv(os.path.join(root_path, "validation/{}.csv".format(self.name)), index=False)
         self.test.to_csv(os.path.join(root_path, "test/{}.csv".format(self.name)), index=False)
+
+    def select_columns(self, list_columns):
+        self.data = self.data[list_columns]
+    
+    def remove_nan(self):
+        self.data.dropna(inplace=True)
 
     def save_raw_data(self, root_path):
         self.data.to_csv(os.path.join(root_path, "raw_data/{}.csv".format(self.name)), index=False)

@@ -29,9 +29,13 @@ class CRSP_Dataset:
         for company in self.companies:
             company.join_by_date(DJI, "DJI_Return")
     
+    def select_columns(self, list_columns):
+        for company in self.companies:
+            company.select_columns(list_columns)
+    
     def remove_nan(self):
         for company in self.companies:
-            company.data.dropna()
+            company.remove_nan()
 
     def save_raw_data(self, root_path):
         for company in self.companies:

@@ -4,9 +4,10 @@ from portfolio import Portfolio
 from stock import Stock
 
 if __name__ == '__main__':
-    PREDICTION_DIR = "data/2023_test_prediction"
-    TEST_DIR = "data/2023_test"
-    stock_names = ['AAPL', 'AXP', 'BA', 'CAT', 'CSCO', 'CVX', 'DOW', 'DIS', 'WBA', 'GS', 'HD', 'IBM', 'INTC', 'JNJ', 'JPM', 'KO', 'MCD', 'MMM', 'MRK', 'MSFT', 'NKE',  'PG', 'TRV', 'UNH',  'VZ', 'V', 'WMT', 'HON', 'AMGN', 'CRM']
+    PREDICTION_DIR = "data/DJI_Company_2023_prediction"
+    TEST_DIR = "data/DJI_Company_2023_test"
+    # stock_names = ['AAPL', 'AXP', 'BA', 'CAT', 'CSCO', 'CVX', 'DOW', 'DIS', 'WBA', 'GS', 'HD', 'IBM', 'INTC', 'JNJ', 'JPM', 'KO', 'MCD', 'MMM', 'MRK', 'MSFT', 'NKE',  'PG', 'TRV', 'UNH',  'VZ', 'V', 'WMT', 'HON', 'AMGN', 'CRM']
+    stock_names = ['AAPL', 'AXP', 'BA', 'CAT', 'CSCO', 'CVX', 'DOW', 'DIS', 'WBA', 'GS', 'HD', 'IBM', 'INTC', 'JNJ', 'JPM', 'KO', 'MCD', 'MMM', 'MRK', 'MSFT', 'NKE',  'PG', 'VZ', 'V', 'WMT', 'HON', 'AMGN']
     # stock_names = ['AAPL']
     spend_per_stock = 100
     money_pool = 6000
