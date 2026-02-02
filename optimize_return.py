@@ -1,5 +1,6 @@
-import pandas as pd
 import os
+from pathlib import Path
+import pandas as pd
 import optuna
 
 class Profile:
@@ -111,8 +112,8 @@ class Profile:
             stock_name = stock_names[i]
         # for stock_name in stock_names:ssss
             # print(f"Processing {stock_name}")
-            prediction_file = os.path.join(prediction_folder, stock_name + "_predictions.csv")
-            test_file = os.path.join(test_file_path, stock_name + ".csv")
+            prediction_file = prediction_folder / f"{stock_name}_predictions.csv"
+            test_file = test_file_path / f"{stock_name}.csv"
             prediction = pd.read_csv(prediction_file, usecols=['predicted_RET']).to_numpy().flatten()
             stock_price = pd.read_csv(test_file, usecols=['PRC']).to_numpy().flatten()
             
@@ -124,8 +125,12 @@ class Profile:
 
 
 if __name__ == '__main__':
-    prediction_folder = "/Users/zimenglyu/Documents/cluster_results/0216/predictions"
-    test_file_path = "/Users/zimenglyu/Documents/datasets/CRSP/DJI_history_new/single_stocks/test"
+    repo_root = Path(__file__).resolve().parent
+    results_root = Path(os.getenv("FIN_RESULTS_DIR", repo_root / "results"))
+    datasets_root = Path(os.getenv("FIN_DATASETS_DIR", repo_root / "datasets"))
+
+    prediction_folder = Path(os.getenv("FIN_PREDICTION_DIR", results_root / "0216" / "predictions"))
+    test_file_path = Path(os.getenv("FIN_TEST_DIR", datasets_root / "CRSP" / "DJI_history_new" / "single_stocks" / "test"))
     stock_names = ['AAPL', 'AXP', 'BA', 'CAT', 'CSCO', 'CVX', 'DOW', 'DIS', 'WBA', 'GS', 'HD', 'IBM', 'INTC', 'JNJ', 'JPM', 'KO', 'MCD', 'MMM', 'MRK', 'MSFT', 'NKE',  'PG', 'TRV', 'UNH',  'VZ', 'V', 'WMT']
     # stock_names = ['AAPL', 'AXP', 'BA', 'CAT', 'CSCO', 'CVX', 'DOW', 'DIS', 'WBA', 'GS', 'HD', 'IBM', 'INTC', 'JNJ', 'JPM', 'KO', 'MCD', 'MMM', 'MRK', 'MSFT', 'NKE',  'PG', 'TRV', 'UNH',  'VZ', 'V', 'WMT', 'HON', 'AMZN', 'CRM']
 

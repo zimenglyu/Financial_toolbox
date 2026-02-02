@@ -1,21 +1,26 @@
-import pandas as pd
 import os
+from pathlib import Path
+import pandas as pd
 from CRSP_Dataset import CRSP_Dataset
 
 def make_dir(path):
     if not os.path.exists(path):
         os.mkdir(path)
-        print(f"Directory '{path}' is build.")
+        print(f"Directory '{path}' is built.")
     else:
-        print(f"Directory '{path}' already exists)")
+        print(f"Directory '{path}' already exists.")
 
 if __name__ == '__main__':
     test_year = 2022
-    CRSP_file_path = "/Users/zimenglyu/Documents/datasets/CRSP/DJI_company.csv"
-    dataset_output_path = f"/Users/zimenglyu/Documents/datasets/CRSP/DJI_company_{test_year}"
-    DJI_file_path = "/Users/zimenglyu/Documents/datasets/stock/DJI_stock_data.csv"
-    if not os.path.exists(dataset_output_path):
-        os.mkdir(dataset_output_path)
+    repo_root = Path(__file__).resolve().parents[1]
+    datasets_root = Path(os.getenv("FIN_DATASETS_DIR", repo_root / "datasets"))
+
+    CRSP_file_path = datasets_root / "CRSP" / "DJI_company.csv"
+    dataset_output_path = datasets_root / "CRSP" / f"DJI_company_{test_year}"
+    DJI_file_path = datasets_root / "stock" / "DJI_stock_data.csv"
+
+    if not dataset_output_path.exists():
+        dataset_output_path.mkdir(parents=True, exist_ok=True)
         print(f"Directory '{dataset_output_path}' is created.")
     else:
         print(f"Directory '{dataset_output_path}' already exists.")

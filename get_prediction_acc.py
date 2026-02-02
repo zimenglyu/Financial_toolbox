@@ -1,9 +1,13 @@
+import os
+from pathlib import Path
 import pandas as pd
 from glob import glob
 
-prediction_path = "/Users/zimenglyu/Documents/cluster_results/DJI_Company_2023_lr_prediction"
+repo_root = Path(__file__).resolve().parent
+results_root = Path(os.getenv("FIN_RESULTS_DIR", repo_root / "results"))
+prediction_path = results_root / "DJI_Company_2023_lr_prediction"
 
-files = glob(prediction_path + "/*.csv")
+files = glob(str(prediction_path / "*.csv"))
 total_correct = 0
 total = 0
 for file in files:

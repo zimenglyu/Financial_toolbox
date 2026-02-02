@@ -1,6 +1,6 @@
-import pandas as pd
-import numpy as np
 import os
+from pathlib import Path
+import pandas as pd
 from glob import glob
 
 def get_folders_in_path(path):
@@ -60,15 +60,19 @@ def make_dir(path):
     
 
 if __name__ == '__main__':
-    root_folder = "/Users/zimenglyu/Documents/datasets/CRSP/DJI_company/"
-    new_root = root_folder + "original"
-    files = glob(os.path.join(root_folder, "raw/*.csv"))
+    repo_root = Path(__file__).resolve().parents[1]
+    datasets_root = Path(os.getenv("FIN_DATASETS_DIR", repo_root / "datasets"))
+    root_folder = datasets_root / "CRSP" / "DJI_company"
+    new_root = root_folder / "original"
+    new_root.mkdir(parents=True, exist_ok=True)
+
+    files = glob(str(root_folder / "raw" / "*.csv"))
     for file in files:
-        file_name = file.split('/')[-1].split('.csv')[0]
+        file_name = Path(file).stem
         df = pd.read_csv(file)
         df = replace_char_with_zero(df, "RET")
         df = add_volumn_change(df)
         df = add_BA_Spread(df)
         df = add_Illiquidity(df)
         df = add_TurnOver(df)
-        df.to_csv(os.path.join(new_root , file_name + ".csv"))
+        df.to_csv(new_root / f"{file_name}.csv")

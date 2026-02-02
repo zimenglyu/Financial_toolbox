@@ -1,15 +1,18 @@
-import pandas as pd
 import os
+from pathlib import Path
+import pandas as pd
 
 # Specify the directory containing the CSV files
-directory = '/Users/zimenglyu/Documents/datasets/CRSP/DJI_company/complete_file'
+repo_root = Path(__file__).resolve().parents[1]
+datasets_root = Path(os.getenv("FIN_DATASETS_DIR", repo_root / "datasets"))
+directory = datasets_root / "CRSP" / "DJI_company" / "complete_file"
 
 # Iterate over all files in the directory
 for filename in os.listdir(directory):
     # Check if the file is a CSV file
     if filename.endswith('.csv'):
         # Construct the full file path
-        file_path = os.path.join(directory, filename)
+        file_path = directory / filename
         
         # Read the CSV file
         df = pd.read_csv(file_path)

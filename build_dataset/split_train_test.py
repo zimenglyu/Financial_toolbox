@@ -1,13 +1,17 @@
-import pandas as pd
-from glob import glob
 import os
-root_path = "/Users/zimenglyu/Documents/datasets/CRSP/DJI_company"
-file_names = glob(root_path + '/complete_file/*.csv')
+from pathlib import Path
+from glob import glob
+import pandas as pd
+
+repo_root = Path(__file__).resolve().parents[1]
+datasets_root = Path(os.getenv("FIN_DATASETS_DIR", repo_root / "datasets"))
+root_path = datasets_root / "CRSP" / "DJI_company"
+file_names = glob(str(root_path / "complete_file" / "*.csv"))
 
 for file in file_names:
     # Step 1: Read the CSV file
     df = pd.read_csv(file, parse_dates=['date'])
-    file_name = file.split('/')[-1].split('.csv')[0]
+    file_name = Path(file).stem
     # Step 2: Define your datetime ranges for splitting
     train_start = pd.to_datetime('1/1/1990')
     train_end = pd.to_datetime('12/31/2021')
@@ -27,6 +31,6 @@ for file in file_names:
     test_df = df[(df['date'] >= test_start) & (df['date'] <= test_end)]
 
     # Optional: Save these datasets to new CSV files if needed
-    train_df.to_csv("{}/{}/{}.csv".format(root_path, "train", file_name), index=False)
-    validation_df.to_csv("{}/{}/{}.csv".format(root_path, "validation", file_name), index=False)
-    test_df.to_csv("{}/{}/{}.csv".format(root_path, "test", file_name), index=False)
+    train_df.to_csv(root_path / "train" / f"{file_name}.csv", index=False)
+    validation_df.to_csv(root_path / "validation" / f"{file_name}.csv", index=False)
+    test_df.to_csv(root_path / "test" / f"{file_name}.csv", index=False)

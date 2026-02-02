@@ -14,9 +14,20 @@ This repository contains a simple portfolio management system written in Python.
 1. Ensure you have Python installed on your system.
 2. Clone this repository to your local machine.
 3. Install the required dependencies by running `pip install pandas`.
-4. Modify `main.py` to provide appropriate file paths for prediction data and test data.
+4. Set environment variables for data and results paths (or use the defaults described below).
 5. Define return_strategy in `main.py`.
 6. Run `main.py` to execute the portfolio calculations.
+
+## Paths and environment variables
+
+Scripts in this repository avoid hard-coded absolute paths. Set these variables to point to your local data:
+
+- See `.env.example` for a starter template.
+- `FIN_DATASETS_DIR`: root directory for datasets (default: `./datasets` relative to repo root)
+- `FIN_RESULTS_DIR`: root directory for result outputs (default: `./results` relative to repo root)
+- `CRSP_PROCESSOR_DIR`: root directory for the CRSP processor repo (default: `./CRSP_Processor` relative to repo root)
+- `EXACT_RESULTS_DIR`: root directory for "exact" experiment outputs (default: `./exact` relative to repo root)
+- `FIN_PREDICTION_DIR`, `FIN_TEST_DIR`, `FIN_EXPECTED_DIR`: optional overrides used by specific scripts
 
 ## Portfolio Class
 

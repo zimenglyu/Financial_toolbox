@@ -1,15 +1,19 @@
-import pandas as pd
 import os
+from pathlib import Path
+import pandas as pd
 from glob import glob
 import shutil
 
-result_path = '/Users/zimenglyu/Documents/cluster_results/2022_sp_500_2022_all'
-genome_path = "/Users/zimenglyu/Documents/cluster_results/2022_sp_500_2022_all_genome"
+repo_root = Path(__file__).resolve().parent
+results_root = Path(os.getenv("FIN_RESULTS_DIR", repo_root / "results"))
+
+result_path = results_root / "2022_sp_500_2022_all"
+genome_path = results_root / "2022_sp_500_2022_all_genome"
 
 best_mse = 100
 overall_mse = []
-if not os.path.exists(genome_path):
-    os.makedirs(genome_path)
+if not genome_path.exists():
+    genome_path.mkdir(parents=True, exist_ok=True)
     print("Created directory: {}".format(genome_path))
 
 # for stock in ['AAPL', 'AXP', 'BA', 'CAT', 'CSCO', 'CVX', 'DOW', 'DIS', 'WBA', 'GS', 'HD', 'IBM', 'INTC', 'JNJ', 'JPM', 'KO', 'MCD', 'MMM', 'MRK', 'MSFT', 'NKE',  'PG', 'TRV', 'UNH',  'VZ', 'V', 'WMT', 'HON', 'AMZN', 'CRM']:
@@ -17,19 +21,18 @@ for stock in ['A', 'AAL', 'AAPL', 'ABBV', 'ABNB', 'ABT', 'ACGL', 'ACN', 'ADBE', 
     print("Processing stock: {}".format(stock))
     best_mse = 100
     for i in range(15):
-        filepath = "{}/{}/lr_0.001/max_genome_20000/island_20/{}".format(result_path, stock, i)
-        if os.path.exists(f"{filepath}/fitness_log.csv") and os.path.isdir(filepath):
+        filepath = result_path / stock / "lr_0.001" / "max_genome_20000" / "island_20" / str(i)
+        if (filepath / "fitness_log.csv").exists() and filepath.is_dir():
 
-            df = pd.read_csv("{}/fitness_log.csv".format(filepath))
+            df = pd.read_csv(filepath / "fitness_log.csv")
             mse = df[' Best Val. MSE'].iloc[-1]
             if mse < best_mse:
                 best_mse = mse
-                best_genome_path = glob("{}/*.bin".format(filepath))[0]
+                best_genome_path = glob(str(filepath / "*.bin"))[0]
     overall_mse.append(best_mse)
-    new_genome_path = os.path.join(genome_path, "{}.bin".format(stock))
+    new_genome_path = genome_path / f"{stock}.bin"
 
     shutil.copy(best_genome_path, new_genome_path)
     print("copied {} to {}".format(best_genome_path, new_genome_path))
 print("Overall best MSE: {}".format(sum(overall_mse) / len(overall_mse)))
     
-

@@ -1,8 +1,8 @@
 #!/bin/bash
 # STOCK='CVX'
 # INPUT_PARAMETER="RET  VOL_CHANGE  BA_SPREAD  ILLIQUIDITY sprtrn TURNOVER DJI_Return"
-# EXAMM="/home/zl7069/git/debug/exact"
-RESULT_PATH="/Users/zimenglyu/Documents/cluster_results/DJI_Company_2022"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+RESULT_PATH="${RESULT_PATH:-$SCRIPT_DIR/results/DJI_Company_2022}"
 MAX_GENOME=20000
 NUM_ISLAND=20
 lr=0.0001

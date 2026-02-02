@@ -1,8 +1,12 @@
+import os
+from pathlib import Path
 import pandas as pd
 
 company_tickers = ['AAPL', 'AXP', 'BA', 'CAT', 'CSCO', 'CVX', 'DOW', 'DIS', 'WBA', 'GS', 'HD', 'IBM', 'INTC', 'JNJ', 'JPM', 'KO', 'MCD', 'MMM', 'MRK', 'MSFT', 'NKE', 'HON', 'PG', 'TRV', 'UNH', 'AMZN', 'VZ', 'V', 'WMT', 'CRM']
 print(len(company_tickers))
-file_name = "/Users/zimenglyu/Documents/datasets/CRSP/DJI_company.csv"
+repo_root = Path(__file__).resolve().parents[1]
+datasets_root = Path(os.getenv("FIN_DATASETS_DIR", repo_root / "datasets"))
+file_name = datasets_root / "CRSP" / "DJI_company.csv"
 company_names = []
 data = pd.read_csv(file_name)
 for ticker in company_tickers:

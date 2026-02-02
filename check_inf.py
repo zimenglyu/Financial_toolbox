@@ -1,8 +1,12 @@
 import csv
 import math
+import os
+from pathlib import Path
 
 # Path to your CSV file
-csv_file_path = '/Users/zimenglyu/Documents/datasets/CRSP/DJI_company_2023/validation/TRV.csv'
+repo_root = Path(__file__).resolve().parent
+datasets_root = Path(os.getenv("FIN_DATASETS_DIR", repo_root / "datasets"))
+csv_file_path = datasets_root / "CRSP" / "DJI_company_2023" / "validation" / "TRV.csv"
 
 with open(csv_file_path, mode='r', encoding='utf-8') as file:
     csv_reader = csv.reader(file)

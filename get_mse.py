@@ -1,8 +1,7 @@
-import numpy as np
-import matplotlib.pyplot as plt
+import os
+from pathlib import Path
 import pandas as pd
 from sklearn.metrics import mean_squared_error 
-from glob import glob
 
 # data_path = ''
 # data = pd.read_csv(data_path)
@@ -16,7 +15,6 @@ from glob import glob
 # mse_naive = mean_squared_error(expected[1:], expected[:-1])
 # print("Mean Squared Error of naive prediction: {:.6f}".format(mse_naive))
 
-# data_dir = '/Users/zimenglyu/Documents/cluster_results/DJI_Company_2023_lr_prediction'
 # files = glob(data_dir + "/*.csv")
 # overall_mse = []
 # for file in files:
@@ -28,13 +26,16 @@ from glob import glob
 #     print("Mean Squared Error of prediction: {:.6f}".format(mse))
 #     overall_mse.append(mse)
 # print("Overall Mean Squared Error: {:.6f}".format(sum(overall_mse) / len(overall_mse)))
+repo_root = Path(__file__).resolve().parent
+datasets_root = Path(os.getenv("FIN_DATASETS_DIR", repo_root / "datasets"))
+
 stock_names = ['AAPL', 'AMZN', 'AXP', 'BA', 'CAT', 'CSCO', 'CVX', 'DOW', 'DIS', 'WBA', 'GS', 'HD', 'IBM', 'INTC', 'JNJ', 'JPM', 'KO', 'MCD', 'MMM', 'MRK', 'MSFT', 'NKE',  'PG', 'TRV', 'UNH',  'VZ', 'V', 'WMT',  'HON', 'CRM']
-prediction_dir = '/Users/zimenglyu/Downloads/TESTING_FILES/SVR'
-expected_dir = '/Users/zimenglyu/Documents/datasets/CRSP/DJI_company_2023/test'
+prediction_dir = Path(os.getenv("FIN_PREDICTION_DIR", repo_root / "predictions"))
+expected_dir = Path(os.getenv("FIN_EXPECTED_DIR", datasets_root / "CRSP" / "DJI_company_2023" / "test"))
 overall_mse = []
 for stock in stock_names:
-    prediction_file = f'{prediction_dir}/{stock}.csv'
-    expected_file = f'{expected_dir}/{stock}.csv'
+    prediction_file = prediction_dir / f"{stock}.csv"
+    expected_file = expected_dir / f"{stock}.csv"
     # files = glob(data_dir + "/*.csv")
     expected_data = pd.read_csv(expected_file)
     prediction_data = pd.read_csv(prediction_file)
@@ -46,5 +47,3 @@ for stock in stock_names:
     print("Mean Squared Error of prediction: {:.6f}".format(mse))
     overall_mse.append(mse)
 print("Overall Mean Squared Error: {:.6f}".format(sum(overall_mse) / len(overall_mse)))
-
-
