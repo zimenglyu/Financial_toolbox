@@ -154,6 +154,16 @@ class Stock:
     def get_predicted_return(self, time):
         # print(f"company {self.name}, time {time}")
         return self.return_prediction[time]
+
+    def get_past_return(self, time, lookback=1):
+        # realized return from `lookback` days ago up to `time`, used as a
+        # reversal signal; 0 if there isn't enough price history yet
+        if time - lookback < 0:
+            return 0.0
+        past_price = self.stock_price[time - lookback]
+        if past_price == 0:
+            return 0.0
+        return (self.stock_price[time] - past_price) / past_price
     
     def get_stock_price(self, time):
         return self.stock_price[time]

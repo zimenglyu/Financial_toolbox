@@ -65,7 +65,7 @@ class Portfolio:
     def set_risk_tolenrance(self, risk_tolenrance):
         self.risk_tolenrance = risk_tolenrance
 
-    def trade(self, strategy, long_company_number=10, short_company_number=5):
+    def trade(self, strategy, long_company_number=10, short_company_number=5, lookback=1):
         portfolio_return = 0
         self.strategy = strategy
         self.logger.log(f"Trading with {self.strategy} strategy", 'INFO')
@@ -84,6 +84,12 @@ class Portfolio:
             portfolio_return = self.daily_long_short_return(long_company_number, short_company_number)
         elif self.strategy == 'daily_zimeng_long_short_return':
             portfolio_return = self.daily_zimeng_long_short_return(long_company_number, short_company_number)
+        elif self.strategy == 'buy_and_hold_return':
+            portfolio_return = self.buy_and_hold_return()
+        elif self.strategy == 'daily_equal_weight_return':
+            portfolio_return = self.daily_equal_weight_return()
+        elif self.strategy == 'short_term_reversal_return':
+            portfolio_return = self.short_term_reversal_return(long_company_number, short_company_number, lookback)
         else:
             self.logger.log("Invalid trading strategy", 'ERROR')
             exit()
@@ -153,6 +159,15 @@ class Portfolio:
         sorted_index = np.argsort(predicted_return_list)
         # sorted_index = sorted(range(len(predicted_return_list)), key=lambda k: predicted_return_list[k])
         return sorted_index, predicted_return_list
+
+    def get_sorted_reversal_signal_list(self, time, lookback=1):
+        # reversal signal = negative of each stock's past `lookback`-day
+        # return, so biggest recent losers get the highest signal
+        signal_list = []
+        for company in self.portfolio_list:
+            signal_list.append(-company.get_past_return(time, lookback))
+        sorted_index = np.argsort(signal_list)
+        return sorted_index, signal_list
 
     def daily_long_return(self, number_top = 5, number_bottom = 5):
         """
@@ -566,4 +581,127 @@ class Portfolio:
             self.current_cash_amount += company.clear_holdings(time)
         self.money_earn = self.current_cash_amount
         return self.calculate_return()
-    
+
+    def buy_and_hold_return(self):
+        """
+        Buys equal dollar amounts of every stock on day one of the testing
+        period and never trades again. Since each stock gets the same
+        starting dollar amount, the portfolio's total return works out to
+        the average of the 50 stocks' cumulative returns.
+        """
+        self.reset()
+        self.current_cash_amount = self.initial_capital
+        quota_per_stock = self.initial_capital / len(self.portfolio_list)
+        self.logger.log(f"[time 0]: buying {len(self.portfolio_list)} stocks equally, quota per stock: {quota_per_stock}", 'DEBUG')
+        for company in self.portfolio_list:
+            company.buy_stock(quota_per_stock, 0)
+            self.current_cash_amount -= quota_per_stock
+
+        self.logger.log("/*-----Clearing all stocks-------*/", 'DEBUG')
+        for company in self.portfolio_list:
+            self.money_earn += company.clear_holdings(-2)
+        return self.calculate_return()
+
+    def daily_equal_weight_return(self):
+        """
+        Rebalances the portfolio back to equal weight (1/N per stock) at
+        every time step. Each day all holdings are sold at that day's price
+        and immediately re-split evenly across all stocks, so the daily
+        portfolio return is the mean of the stocks' daily returns, and the
+        total return is that daily mean return compounded over the period.
+        """
+        self.reset()
+        self.current_cash_amount = self.initial_capital
+        testing_period = self.portfolio_list[0].testing_period
+        num_stocks = len(self.portfolio_list)
+
+        for time in range(testing_period - 1):
+            for company in self.portfolio_list:
+                self.current_cash_amount += company.clear_holdings(time)
+            self.logger.log(f"[time {time}]: current cash amount after clearing all holdings: {self.current_cash_amount}", 'DEBUG')
+
+            quota_per_stock = self.current_cash_amount / num_stocks
+            for company in self.portfolio_list:
+                company.buy_stock(quota_per_stock, time)
+                self.current_cash_amount -= quota_per_stock
+            self.logger.log(f"[time {time}]: rebalanced to equal weight, quota per stock: {quota_per_stock}", 'DEBUG')
+
+        self.logger.log("/*-----Clearing all stocks-------*/", 'DEBUG')
+        for company in self.portfolio_list:
+            self.money_earn += company.clear_holdings(-2)
+        return self.calculate_return()
+
+    def short_term_reversal_return(self, long_company_number=10, short_company_number=10, lookback=1):
+        """
+        Short-term reversal strategy. The signal for each stock is the
+        negative of its own past `lookback`-day return (1-day or 5-day),
+        so the biggest recent losers rank highest and the biggest recent
+        winners rank lowest. Each day, longs the `long_company_number`
+        biggest recent losers and shorts the `short_company_number`
+        biggest recent winners, rebalancing daily.
+        """
+        self.logger.log(f"Short-term reversal ({lookback}-day): longing {long_company_number} biggest losers, shorting {short_company_number} biggest winners", 'INFO')
+        self.reset()
+        self.current_cash_amount = self.initial_capital
+        testing_period = self.portfolio_list[0].testing_period
+
+        longed_stock_yesterday = []
+        shorted_stock_yesterday = []
+        time = 0
+        for time in range(testing_period - 1):
+            if time < lookback:
+                self.logger.log(f"[time {time}]: not enough history for {lookback}-day lookback, skipping", 'DEBUG')
+                continue
+
+            self.logger.log(f"[time {time}]: clearing all holdings", 'DEBUG')
+            for company in longed_stock_yesterday:
+                self.current_cash_amount += company.clear_holdings(time)
+            for company in shorted_stock_yesterday:
+                self.current_cash_amount += company.clear_holdings(time)
+            self.logger.log(f"[time {time}]: current cash amount after clearing all holdings: {self.current_cash_amount}", 'DEBUG')
+
+            sorted_index, signal_list = self.get_sorted_reversal_signal_list(time, lookback)
+
+            longed_stock_today = []
+            for i in range(long_company_number):
+                index = -(i + 1)  # highest signal = biggest recent losers
+                longed_stock_today.append(self.portfolio_list[sorted_index[index]])
+
+            shorted_stock_today = []
+            for i in range(short_company_number):
+                shorted_stock_today.append(self.portfolio_list[sorted_index[i]])  # lowest signal = biggest recent winners
+
+            borrow_cash_amount = self.current_cash_amount
+            long_quota_per_stock = self.current_cash_amount / long_company_number
+            self.logger.log(f"[time {time}]: longing {long_company_number} stocks, quota per stock: {long_quota_per_stock}", 'DEBUG')
+            for company in longed_stock_today:
+                if self.current_cash_amount > long_quota_per_stock:
+                    company.buy_stock(long_quota_per_stock, time)
+                    self.current_cash_amount -= long_quota_per_stock
+                elif abs(self.current_cash_amount - long_quota_per_stock) < 1:
+                    company.buy_stock(self.current_cash_amount, time)
+                    self.current_cash_amount = 0
+                else:
+                    self.logger.log(f"[time {time}]: Can't buy stock {company.get_stock_name()} because of insufficient money", 'DEBUG')
+
+            short_quota_per_stock = borrow_cash_amount / short_company_number
+            self.logger.log(f"[time {time}]: shorting {short_company_number} stocks, quota per stock: {short_quota_per_stock}", 'DEBUG')
+            for company in shorted_stock_today:
+                if borrow_cash_amount >= short_quota_per_stock:
+                    company.short_stock(short_quota_per_stock, time)
+                    borrow_cash_amount -= short_quota_per_stock
+                    self.current_cash_amount += short_quota_per_stock
+                elif abs(borrow_cash_amount - short_quota_per_stock) < 1:
+                    company.short_stock(borrow_cash_amount, time)
+                    self.current_cash_amount += borrow_cash_amount
+                    borrow_cash_amount = 0
+                else:
+                    self.logger.log(f"[time {time}]: Can't short stock {company.get_stock_name()} because of insufficient money", 'DEBUG')
+
+            longed_stock_yesterday = longed_stock_today
+            shorted_stock_yesterday = shorted_stock_today
+
+        for company in self.portfolio_list:
+            self.current_cash_amount += company.clear_holdings(time)
+        self.money_earn = self.current_cash_amount
+        return self.calculate_return()
