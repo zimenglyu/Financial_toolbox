@@ -279,13 +279,13 @@ class Portfolio:
                 for company in company_to_short:
                     # self.logger.log("shorting stock: ", company.get_stock_name())
                     if borrow_cash_amount >= quota_per_stock:
-                        company.short_stock(quota_per_stock, time)
+                        credited = company.short_stock(quota_per_stock, time)
                         borrow_cash_amount -= quota_per_stock
-                        self.current_cash_amount += quota_per_stock
+                        self.current_cash_amount += credited
                         self.logger.log(f"[time {time}]: current cash: {borrow_cash_amount}, current cash amount: {self.current_cash_amount}", 'DEBUG')
                     elif abs(borrow_cash_amount - quota_per_stock) < 1:
-                        company.short_stock(borrow_cash_amount, time)
-                        self.current_cash_amount += borrow_cash_amount
+                        credited = company.short_stock(borrow_cash_amount, time)
+                        self.current_cash_amount += credited
                         borrow_cash_amount = 0
                         self.logger.log(f"[time {time}]: current cash: {borrow_cash_amount}, current cash amount: {self.current_cash_amount}", 'DEBUG')
                     else:
@@ -374,13 +374,13 @@ class Portfolio:
                 for company in shorted_stock_today:
                     self.logger.log(f"[time {time}]: shorting stock {company.get_stock_name()}, quota per stock: {quota_per_stock}, predicted return: {company.get_predicted_return(time)}", 'DEBUG')
                     if borrow_cash_amount >= quota_per_stock:
-                        company.short_stock(quota_per_stock, time)
+                        credited = company.short_stock(quota_per_stock, time)
                         borrow_cash_amount -= quota_per_stock
-                        self.current_cash_amount += quota_per_stock
+                        self.current_cash_amount += credited
                         # self.current_cash_amount -= quota_per_stock
                     elif abs(borrow_cash_amount - quota_per_stock) < 1:
-                        company.short_stock(borrow_cash_amount, time)
-                        self.current_cash_amount += borrow_cash_amount
+                        credited = company.short_stock(borrow_cash_amount, time)
+                        self.current_cash_amount += credited
                         borrow_cash_amount = 0
                     else:
                         self.logger.log(f"[time {time}]: Can't short stock {company.get_stock_name()} at time {time} because of insufficient money", 'DEBUG')
@@ -468,13 +468,13 @@ class Portfolio:
                 for company in shorted_stock_today:
                     self.logger.log(f"[time {time}]: shorting stock {company.get_stock_name()}, quota per stock: {quota_per_stock}, predicted return: {company.get_predicted_return(time)}", 'DEBUG')
                     if borrow_cash_amount >= quota_per_stock:
-                        company.short_stock(quota_per_stock, time)
+                        credited = company.short_stock(quota_per_stock, time)
                         borrow_cash_amount -= quota_per_stock
-                        self.current_cash_amount += quota_per_stock
+                        self.current_cash_amount += credited
                         # self.current_cash_amount -= quota_per_stock
                     elif abs(borrow_cash_amount - quota_per_stock) < 1:
-                        company.short_stock(borrow_cash_amount, time)
-                        self.current_cash_amount += borrow_cash_amount
+                        credited = company.short_stock(borrow_cash_amount, time)
+                        self.current_cash_amount += credited
                         borrow_cash_amount = 0
                     else:
                         self.logger.log(f"[time {time}]: Can't short stock {company.get_stock_name()} at time {time} because of insufficient money", 'DEBUG')
@@ -547,13 +547,13 @@ class Portfolio:
                 short_quota_per_stock = borrow_cash_amount / len(company_to_short)
                 for company in company_to_short:
                     if borrow_cash_amount >= short_quota_per_stock:
-                        company.short_stock(short_quota_per_stock, time)
+                        credited = company.short_stock(short_quota_per_stock, time)
                         borrow_cash_amount -= short_quota_per_stock
-                        self.current_cash_amount += short_quota_per_stock
+                        self.current_cash_amount += credited
                         # self.current_cash_amount -= quota_per_stock
                     elif abs(borrow_cash_amount - short_quota_per_stock) < 1:
-                        company.short_stock(borrow_cash_amount, time)
-                        self.current_cash_amount += borrow_cash_amount
+                        credited = company.short_stock(borrow_cash_amount, time)
+                        self.current_cash_amount += credited
                         borrow_cash_amount = 0
                     else:
                         self.logger.log(f"Can't short stock {company.get_stock_name()} at time {time} because of insufficient money", 'DEBUG')

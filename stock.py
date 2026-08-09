@@ -32,8 +32,19 @@ class Stock:
     def read_stock_price(self, file_path):
         self.stock_price = pd.read_csv(file_path, usecols=['PRC']).to_numpy().flatten()
         self.transaction_cost = pd.read_csv(file_path, usecols=['TRAN_COST']).to_numpy().flatten()
-        self.ask_price = pd.read_csv(file_path, usecols=['ASK']).to_numpy().flatten()
-        self.bid_price = pd.read_csv(file_path, usecols=['BID']).to_numpy().flatten()
+        # ASK/BID are read ONLY when the file provides them. They are consumed exclusively
+        # by the trade_with_bid_ask execution mode; the default (PRC) and use_TC modes
+        # never touch them. Some datasets ship PRC/TRAN_COST without quote levels -- and
+        # for those, ASK/BID are NOT derivable: PRC is the closing TRADE price, which
+        # (measured on a dataset that has all four) equals ASK only 27% of the time and
+        # falls outside [BID, ASK] entirely 30% of the time. Only the SPREAD is recoverable
+        # (ASK - BID == 2 * TRAN_COST exactly), not the level -- so inventing them would be
+        # fabrication. Left as None instead; buy/sell/short/return_stock raise a clear
+        # error below if bid-ask mode is requested without the data.
+        cols = set(pd.read_csv(file_path, nrows=0).columns)
+        has_quotes = {'ASK', 'BID'} <= cols
+        self.ask_price = pd.read_csv(file_path, usecols=['ASK']).to_numpy().flatten() if has_quotes else None
+        self.bid_price = pd.read_csv(file_path, usecols=['BID']).to_numpy().flatten() if has_quotes else None
 
         # if len(self.return_prediction) != 0:
         #     if len(self.return_prediction) + 1 != len(self.stock_price):
@@ -55,6 +66,7 @@ class Stock:
             self.bought_price = self.stock_price[time] + self.transaction_cost[time]
             self.logger.log(f"[time {time}]: Buying company: {self.name} with ${cash_amount}, stock price: {self.stock_price[time]}, transaction cost:{self.transaction_cost[time]}, shares: {new_share}", level='DEBUG')
         elif self.trade_with_bid_ask:
+            self._require_quotes()
             # buy at ask price (high)
             new_share = cash_amount / (self.ask_price[time])
             self.bought_price = self.ask_price[time]
@@ -74,6 +86,7 @@ class Stock:
                 cash_amount = (self.stock_price[time] - self.transaction_cost[time]) * self.share
                 self.logger.log(f"[time {time}]: Selling company: {self.name}, stock price: {self.stock_price[time]}, transaction cost:{self.transaction_cost[time]}, shares: {self.share}, cash amount: {cash_amount}", level='DEBUG')
             elif self.trade_with_bid_ask:
+                self._require_quotes()
                 cash_amount = (self.bid_price[time]) * self.share
                 self.logger.log(f"[time {time}]: Selling company: {self.name}, stock bid price: {self.bid_price[time]}, shares: {self.share}, cash amount {cash_amount}", level='DEBUG')
             else:
@@ -83,19 +96,33 @@ class Stock:
         return cash_amount
     
     def short_stock(self, cash_amount, time):
-        # short as many shares as possible, when shorting, their might be existing shares
+        # short as many shares as possible, when shorting, their might be existing shares.
+        # Returns the actual cash credit for this trade -- equal to cash_amount exactly
+        # when TC is off or trading at bid/ask (unchanged behavior). With TC on, TRAN_COST
+        # already reduces the share count (divided into the price), so crediting the flat
+        # cash_amount target regardless was a bug: the open leg ignored the fee entirely
+        # while the close leg paid it twice (fewer shares, then TC again on cover),
+        # making transaction costs spuriously INCREASE short-side returns. Crediting
+        # shares_shorted * stock_price[time] (the raw-price value of what was ACTUALLY
+        # shorted) instead makes TC a pure drag, symmetric with the long side.
         if self.use_TC:
-            self.share -= cash_amount / (self.stock_price[time] + self.transaction_cost[time])
+            shares_shorted = cash_amount / (self.stock_price[time] + self.transaction_cost[time])
+            self.share -= shares_shorted
             self.sold_price = self.stock_price[time] + self.transaction_cost[time]
-            self.logger.log(f"[time {time}]: Shorting company: {self.name} with ${cash_amount}, stock price: {self.stock_price[time]}, transaction cost: {self.transaction_cost[time]}, shares: {self.share}", level='DEBUG')
+            credited = shares_shorted * self.stock_price[time]
+            self.logger.log(f"[time {time}]: Shorting company: {self.name} with ${cash_amount}, stock price: {self.stock_price[time]}, transaction cost: {self.transaction_cost[time]}, shares: {self.share}, credited: {credited}", level='DEBUG')
+            return credited
         elif self.trade_with_bid_ask:
+            self._require_quotes()
             self.share -= cash_amount / (self.bid_price[time])
             self.sold_price = self.bid_price[time]
             self.logger.log(f"[time {time}]: Shorting company: {self.name}, cash amount: {cash_amount}, stock ask price: {self.bid_price[time]}, shares: {self.share}", level='DEBUG')
+            return cash_amount
         else:
             self.share -= cash_amount / (self.stock_price[time])
             self.sold_price = self.stock_price[time]
             self.logger.log(f"[time {time}]: Shorting company: {self.name}, cash amount: {cash_amount}, stock price: {self.stock_price[time]}, shares: {self.share}", level='DEBUG')
+            return cash_amount
     
     def return_stock(self, time):
         # return all shares
@@ -105,6 +132,7 @@ class Stock:
                 cash_amount = (self.stock_price[time] - self.transaction_cost[time]) * self.share
                 self.logger.log(f"[time {time}]: Returning borrowed: {self.name}, shares {self.share}, price  {self.stock_price[time]}, transaction cost {self.transaction_cost[time]}, cash amount: {cash_amount}", level='DEBUG')
             elif self.trade_with_bid_ask:
+                self._require_quotes()
                 cash_amount = (self.ask_price[time]) * self.share
                 self.logger.log(f"[time {time}]: Returning borrowed: {self.name}, shares {self.share}, stock ask price: {self.ask_price[time]}, cash amount: {cash_amount}", level='DEBUG')
             else:
@@ -188,6 +216,14 @@ class Stock:
     def set_use_TC(self, use_TC):
         # self.logger.log(f"Company {self.name}, use transaction cost: {use_TC}", level='DEBUG')
         self.use_TC = use_TC
+
+    def _require_quotes(self):
+        if self.ask_price is None or self.bid_price is None:
+            raise ValueError(
+                f"{self.name}: bid-ask execution requested but this dataset has no "
+                f"ASK/BID columns. They are not derivable from PRC/TRAN_COST (only the "
+                f"spread is: ASK-BID == 2*TRAN_COST), so re-export the data with real "
+                f"quote levels or use PRC/TC execution instead.")
 
     def set_trade_with_bid_ask(self, trade_with_bid_ask):
         # self.logger.log(f"Company {self.name}, buy with ASK and sell with BID: {trade_with_bid_ask}", level='DEBUG')
