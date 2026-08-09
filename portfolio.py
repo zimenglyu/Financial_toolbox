@@ -688,12 +688,12 @@ class Portfolio:
             self.logger.log(f"[time {time}]: shorting {short_company_number} stocks, quota per stock: {short_quota_per_stock}", 'DEBUG')
             for company in shorted_stock_today:
                 if borrow_cash_amount >= short_quota_per_stock:
-                    company.short_stock(short_quota_per_stock, time)
+                    credited = company.short_stock(short_quota_per_stock, time)
                     borrow_cash_amount -= short_quota_per_stock
-                    self.current_cash_amount += short_quota_per_stock
+                    self.current_cash_amount += credited
                 elif abs(borrow_cash_amount - short_quota_per_stock) < 1:
-                    company.short_stock(borrow_cash_amount, time)
-                    self.current_cash_amount += borrow_cash_amount
+                    credited = company.short_stock(borrow_cash_amount, time)
+                    self.current_cash_amount += credited
                     borrow_cash_amount = 0
                 else:
                     self.logger.log(f"[time {time}]: Can't short stock {company.get_stock_name()} because of insufficient money", 'DEBUG')
