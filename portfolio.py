@@ -65,7 +65,8 @@ class Portfolio:
     def set_risk_tolenrance(self, risk_tolenrance):
         self.risk_tolenrance = risk_tolenrance
 
-    def trade(self, strategy, long_company_number=10, short_company_number=5, lookback=1):
+    def trade(self, strategy, long_company_number=10, short_company_number=5, lookback=1,
+              hold_days=10, entry_rank=10, exit_rank=35):
         portfolio_return = 0
         self.strategy = strategy
         self.logger.log(f"Trading with {self.strategy} strategy", 'INFO')
@@ -90,6 +91,12 @@ class Portfolio:
             portfolio_return = self.daily_equal_weight_return()
         elif self.strategy == 'short_term_reversal_return':
             portfolio_return = self.short_term_reversal_return(long_company_number, short_company_number, lookback)
+        elif self.strategy == 'overlapping_return':
+            portfolio_return = self.overlapping_return(long_company_number, hold_days)
+        elif self.strategy == 'banded_return':
+            portfolio_return = self.banded_return(entry_rank, exit_rank)
+        elif self.strategy == 'conditional_long_short_return':
+            portfolio_return = self.conditional_long_short_return(long_company_number, short_company_number)
         else:
             self.logger.log("Invalid trading strategy", 'ERROR')
             exit()
@@ -629,6 +636,215 @@ class Portfolio:
         self.logger.log("/*-----Clearing all stocks-------*/", 'DEBUG')
         for company in self.portfolio_list:
             self.money_earn += company.clear_holdings(-2)
+        return self.calculate_return()
+
+
+    def overlapping_return(self, top_k=10, hold_days=10):
+        """Jegadeesh-Titman overlapping portfolios; the ONE-NAS headline rule.
+
+        Each day a new portfolio goes long the `top_k` highest-ranked names
+        and short the `top_k` lowest-ranked, equal notional per name, and is
+        held for `hold_days`; the one formed `hold_days` ago is closed. So
+        `hold_days` portfolios are open at any time, each funded with
+        1/hold_days of the capital.
+
+        The sleeves are netted before trading rather than run side by side:
+        a name held by several consecutive sleeves is held once, at the sum
+        of their notionals, so it is not sold and re-bought each day. Only
+        the change in that aggregate is traded, and only it pays the spread.
+
+        Fully invested the book is long the capital and short the capital,
+        i.e. twice the capital in gross notional.
+        """
+        n = len(self.portfolio_list)
+        if 2 * top_k > n:
+            raise ValueError(
+                f"overlapping_return needs at least {2 * top_k} names to take "
+                f"a top-{top_k} and a bottom-{top_k} side without overlap, "
+                f"but the portfolio holds {n}")
+        if hold_days < 1:
+            raise ValueError("hold_days must be at least 1")
+        self.logger.log(
+            f"Overlapping: top {top_k} long / bottom {top_k} short, "
+            f"held {hold_days} days, {hold_days} sleeves netted", 'INFO')
+        self.reset()
+        cash = self.initial_capital
+        testing_period = self.portfolio_list[0].testing_period
+
+        # one sleeve's worth of notional on each side, per name
+        per_name = (self.initial_capital / hold_days) / top_k
+        sleeves = []
+        time = 0
+
+        for time in range(testing_period - 1):
+            sorted_index, _ = self.get_sorted_return_list(time)
+            longs = [self.portfolio_list[sorted_index[-(i + 1)]]
+                     for i in range(top_k)]
+            shorts = [self.portfolio_list[sorted_index[i]]
+                      for i in range(top_k)]
+            sleeves.append((longs, shorts))
+            if len(sleeves) > hold_days:
+                sleeves.pop(0)          # the sleeve formed hold_days ago closes
+
+            target = {}
+            for sleeve_longs, sleeve_shorts in sleeves:
+                for company in sleeve_longs:
+                    target[company] = target.get(company, 0.0) + per_name
+                for company in sleeve_shorts:
+                    target[company] = target.get(company, 0.0) - per_name
+
+            # every name with a position or a target, so names leaving the
+            # book are closed rather than left stranded
+            for company in self.portfolio_list:
+                want = target.get(company, 0.0)
+                if want != 0.0 or company.get_share() != 0:
+                    cash += company.rebalance_to(want, time)
+
+        for company in self.portfolio_list:
+            cash += company.clear_holdings(time)
+        self.money_earn = cash
+        return self.calculate_return()
+
+    def banded_return(self, entry_rank=10, exit_rank=35):
+        """Novy-Marx/Velikov buy-hold spread: enter at a rank, leave at a wider one.
+
+        A name is bought when its predicted rank reaches the top
+        `entry_rank` and held until that rank falls past `exit_rank`;
+        symmetrically on the short side. Between the two thresholds a name
+        is neither bought nor sold, which is the whole point -- it removes
+        the trading caused by small day-to-day rank changes at the boundary.
+
+        Held names split the capital equally on each side, so the book is
+        long the capital and short the capital when both sides are occupied.
+        """
+        n = len(self.portfolio_list)
+        if exit_rank < entry_rank:
+            raise ValueError(
+                f"banded_return needs exit_rank >= entry_rank, got "
+                f"{exit_rank} < {entry_rank}; the exit threshold is the wider "
+                "of the two")
+        if 2 * entry_rank > n:
+            raise ValueError(
+                f"banded_return needs at least {2 * entry_rank} names for the "
+                f"long and short entry bands to be disjoint at entry_rank="
+                f"{entry_rank}, but the portfolio holds {n}")
+        if exit_rank > n:
+            raise ValueError(
+                f"banded_return needs exit_rank ({exit_rank}) to be within "
+                f"the panel ({n} names), otherwise a name entered long can "
+                "never fall past it and is held forever")
+        self.logger.log(
+            f"Banded: enter at rank {entry_rank}, exit past rank {exit_rank}",
+            'INFO')
+        self.reset()
+        cash = self.initial_capital
+        testing_period = self.portfolio_list[0].testing_period
+        n = len(self.portfolio_list)
+        held_long, held_short = set(), set()
+        time = 0
+
+        for time in range(testing_period - 1):
+            sorted_index, _ = self.get_sorted_return_list(time)
+            # rank 1 = highest predicted return
+            rank = {}
+            for position, idx in enumerate(sorted_index):
+                rank[self.portfolio_list[idx]] = n - position
+
+            for company in self.portfolio_list:
+                r = rank[company]
+                if r <= entry_rank:
+                    held_long.add(company)
+                    held_short.discard(company)
+                elif r > exit_rank:
+                    held_long.discard(company)
+                if r > n - entry_rank:
+                    held_short.add(company)
+                    held_long.discard(company)
+                elif r <= n - exit_rank:
+                    held_short.discard(company)
+
+            target = {}
+            if held_long:
+                each = self.initial_capital / len(held_long)
+                for company in held_long:
+                    target[company] = each
+            if held_short:
+                each = self.initial_capital / len(held_short)
+                for company in held_short:
+                    target[company] = -each
+
+            for company in self.portfolio_list:
+                want = target.get(company, 0.0)
+                if want != 0.0 or company.get_share() != 0:
+                    cash += company.rebalance_to(want, time)
+
+        for company in self.portfolio_list:
+            cash += company.clear_holdings(time)
+        self.money_earn = cash
+        return self.calculate_return()
+
+    def conditional_long_short_return(self, long_company_number=10,
+                                      short_company_number=10):
+        """Algorithm 1 of the ONE-NAS paper: daily long-short behind a sign gate.
+
+        Identical to daily_long_short_return except that it rebalances only
+        on days when the model separates the cross-section by sign -- the
+        `long_company_number`-th ranked prediction must be positive and the
+        `short_company_number`-th from the bottom must be negative. On any
+        other day the existing positions are held.
+
+        daily_long_short_return has these two conditions in the source but
+        commented out, so it trades unconditionally. This is kept separate
+        rather than uncommenting them, so results already produced with that
+        method stay reproducible.
+
+        Note the gate can only bind on a signed prediction. On rank-normal
+        predictions, which is what the ONE-NAS panels carry, roughly half
+        the cross-section is negative by construction and the gate fires
+        every day, reducing this to a plain daily rebalance.
+        """
+        n = len(self.portfolio_list)
+        if long_company_number + short_company_number > n:
+            raise ValueError(
+                f"conditional_long_short_return needs at least "
+                f"{long_company_number + short_company_number} names for "
+                "disjoint long and short sides, but the portfolio holds "
+                f"{n}; on a smaller panel the sign gate cannot fire and the "
+                "rule silently returns a flat 0%")
+        self.logger.log(
+            f"Conditional long-short: {long_company_number} long / "
+            f"{short_company_number} short, gated on sign separation", 'INFO')
+        self.reset()
+        cash = self.initial_capital
+        testing_period = self.portfolio_list[0].testing_period
+        time = 0
+
+        for time in range(testing_period - 1):
+            sorted_index, predicted = self.get_sorted_return_list(time)
+            kth_long = predicted[sorted_index[-long_company_number]]
+            kth_short = predicted[sorted_index[short_company_number - 1]]
+            if not (kth_long > 0 and kth_short < 0):
+                self.logger.log(
+                    f"[time {time}]: gate not satisfied "
+                    f"({kth_long:+.6f}, {kth_short:+.6f}), holding", 'DEBUG')
+                continue
+
+            for company in self.portfolio_list:
+                cash += company.clear_holdings(time)
+
+            quota_long = cash / long_company_number
+            quota_short = cash / short_company_number
+            for i in range(long_company_number):
+                company = self.portfolio_list[sorted_index[-(i + 1)]]
+                company.buy_stock(quota_long, time)
+                cash -= quota_long
+            for i in range(short_company_number):
+                company = self.portfolio_list[sorted_index[i]]
+                cash += company.short_stock(quota_short, time)
+
+        for company in self.portfolio_list:
+            cash += company.clear_holdings(time)
+        self.money_earn = cash
         return self.calculate_return()
 
     def short_term_reversal_return(self, long_company_number=10, short_company_number=10, lookback=1):

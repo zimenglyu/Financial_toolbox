@@ -223,6 +223,57 @@ class Stock:
         else:
             return cash_amount
     
+
+    def get_notional(self, time):
+        """Signed dollar value of the current position, negative if short."""
+        return self.share * abs(self.stock_price[time])
+
+    def rebalance_to(self, target_notional, time):
+        """Move the position to `target_notional` dollars; return the cash flow.
+
+        buy_stock/short_stock open a position and sell_stock/return_stock
+        close it entirely, so a name whose desired size merely *changes*
+        can only be expressed as a full close followed by a full re-open,
+        which pays the spread on the whole position instead of on the part
+        that actually traded. The overlapping rule holds several sleeves at
+        once and rolls one of them per day, so it needs the difference.
+
+        Only |delta| shares cross the spread, which is what "transaction
+        costs are charged only on the change in aggregate notional per
+        name" means. Cash flow is negative when buying and positive when
+        selling, matching the sign convention of the methods above.
+
+        PRC is taken in absolute value: CRSP stores a negative price when
+        the day's figure is a bid/ask midpoint rather than a traded close,
+        and that sign carries no economic meaning.
+        """
+        price = abs(self.stock_price[time])
+        if not price > 0:
+            self.logger.log(
+                f"[time {time}]: Company {self.name}: no usable price, "
+                "leaving the position unchanged", level='DEBUG')
+            return 0.0
+
+        target_share = target_notional / price
+        delta = target_share - self.share
+        if delta == 0:
+            return 0.0
+
+        tc = self.transaction_cost[time] if self.use_TC else 0.0
+        # buying lifts the offer, selling hits the bid
+        exec_price = price + tc if delta > 0 else price - tc
+        cash_flow = -delta * exec_price
+        self.share = target_share
+        if delta > 0:
+            self.bought_price = exec_price
+        else:
+            self.sold_price = exec_price
+        self.logger.log(
+            f"[time {time}]: Rebalancing {self.name} to ${target_notional:.2f} "
+            f"({delta:+.4f} shares at {exec_price:.4f}, cash {cash_flow:+.2f})",
+            level='DEBUG')
+        return cash_flow
+
     def set_use_TC(self, use_TC):
         # self.logger.log(f"Company {self.name}, use transaction cost: {use_TC}", level='DEBUG')
         self.use_TC = use_TC
