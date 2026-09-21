@@ -61,9 +61,3 @@ all-or-nothing and cannot express a position that merely changes size.
 averages the centred ranks of several models (the island champions), and
 `mean_pairwise_spearman` reports how correlated those members are, which is
 what determines whether averaging them buys anything.
-
-
-## Contributors
-
-- [Zimeng Lyu](https://github.com/zimenglyu)
-- [Rohaan Nadeem](https://github.com/rohaan2614)
