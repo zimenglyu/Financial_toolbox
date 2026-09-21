@@ -36,9 +36,6 @@ The `Portfolio` class contains the following trading strategies:
 - `simple_return`: Trade each stock individually based on the predicted return. Each stock has the same initial capital for investment. If predicted return > 0, buy or hold; if predicted return <= 0, sell.
 - `portfolio_simple_return`: At time t, sell all stocks with negative predicted return, and use the gained capital to invest all the stocks with positive capital.
 - `long_short_return`: Short the stocks with predicted negative return, STILL UNDER DEVELOPMENT.
-
-### Rules from the ONE-NAS paper
-
 - `overlapping_return`: Jegadeesh-Titman overlapping portfolios. Each day a
   new long-short book is formed and held `hold_days`, so `hold_days` books
   are open at once, each funded with `1/hold_days` of the capital. The books
